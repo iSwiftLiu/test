@@ -128,11 +128,11 @@ def decompress_file(gz_filename):
         return None
 
 
-def extract_css_paths(log_file):
+def extract_css_paths(log_file, domain):
     r"""
     Extract CSS file paths from log file.
     Equivalent bash command:
-    egrep "app\.|chunk-" <file> | awk -F '"h5.baidu.com"' '{print $2}' | egrep "\.js|\.css" | awk -F '"' '{print $2}' | sort | uniq | egrep 'lottery|chunk' | grep '\.css$'
+    egrep "app\.|chunk-" <file> | awk -F '"${domain}"' '{print $2}' | egrep "\.js|\.css" | awk -F '"' '{print $2}' | sort | uniq | egrep 'lottery|chunk' | grep '\.css$'
     """
     try:
         p1 = subprocess.Popen(
@@ -142,7 +142,7 @@ def extract_css_paths(log_file):
         )
         
         p2 = subprocess.Popen(
-            ["awk", "-F", '"h5.baidu.com"', "{print $2}"],
+            ["awk", "-F", f'"{domain}"', "{print $2}"],
             stdin=p1.stdout,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL
@@ -205,11 +205,11 @@ def extract_css_paths(log_file):
         return []
 
 
-def extract_js_paths(log_file):
+def extract_js_paths(log_file, domain):
     r"""
     Extract JS file paths from log file.
     Equivalent bash command:
-    egrep "app\.|chunk-" <file> | awk -F '"h5.baidu.com"' '{print $2}' | egrep "\.js|\.css" | awk -F '"' '{print $2}' | sort | uniq | egrep 'lottery|chunk' | grep '\.js$'
+    egrep "app\.|chunk-" <file> | awk -F '"${domain}"' '{print $2}' | egrep "\.js|\.css" | awk -F '"' '{print $2}' | sort | uniq | egrep 'lottery|chunk' | grep '\.js$'
     """
     try:
         p1 = subprocess.Popen(
@@ -219,7 +219,7 @@ def extract_js_paths(log_file):
         )
         
         p2 = subprocess.Popen(
-            ["awk", "-F", '"h5.baidu.com"', "{print $2}"],
+            ["awk", "-F", f'"{domain}"', "{print $2}"],
             stdin=p1.stdout,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL
@@ -282,7 +282,7 @@ def extract_js_paths(log_file):
         return []
 
 
-def process_log_file(link, css_output_file, js_output_file):
+def process_log_file(link, domain, css_output_file, js_output_file):
     """
     Process a single log file:
     1. Download
@@ -303,14 +303,14 @@ def process_log_file(link, css_output_file, js_output_file):
         print(f"Failed to decompress {filename}", file=sys.stderr)
         return False
     
-    css_paths = extract_css_paths(decompressed_file)
+    css_paths = extract_css_paths(decompressed_file, domain)
     if css_paths and css_paths[0]:
         with open(css_output_file, "a") as f:
             for path in css_paths:
                 if path:
                     f.write(path + "\n")
     
-    js_paths = extract_js_paths(decompressed_file)
+    js_paths = extract_js_paths(decompressed_file, domain)
     if js_paths and js_paths[0]:
         with open(js_output_file, "a") as f:
             for path in js_paths:
@@ -404,7 +404,7 @@ def main():
             os.remove(temp_file)
     
     for link in links:
-        process_log_file(link, temp_css_file, temp_js_file)
+        process_log_file(link, args.domain, temp_css_file, temp_js_file)
     
     finalize_output_files(temp_css_file, temp_js_file, date_str)
     
