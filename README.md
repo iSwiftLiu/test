@@ -16,7 +16,6 @@ Python script for processing CDN logs and extracting CSS/JS file paths.
 - hcloud CLI tool configured with proper credentials
 - wget or curl for downloading files
 - gzip for decompression
-- Standard Unix tools: egrep, awk, grep, sort, uniq
 
 ## Usage
 
@@ -55,8 +54,12 @@ Where `YYYYMMDD` is the date from 2 days ago.
 3. **Process Each Log File**:
    - Download the .gz file
    - Decompress it (automatically removes .gz)
-   - Extract CSS paths matching patterns (app., chunk-, lottery, chunk) ending in .css
-   - Extract JS paths matching patterns (app., chunk-, lottery, chunk) ending in .js
+   - Process using Python native methods:
+     - Read file line by line
+     - Use regex to match lines containing "app." or "chunk-"
+     - Extract paths after domain (quote-delimited)
+     - Filter for .js or .css extensions
+     - Filter for paths containing "lottery" or "chunk"
    - Delete decompressed file
 
 4. **Generate Final Output**: Sort and deduplicate all extracted paths, then save with date-based filenames
