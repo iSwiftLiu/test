@@ -6,13 +6,14 @@ This script processes CDN logs by:
 1. Calculating time range (2 days ago to 1 day ago)
 2. Fetching CDN log links
 3. Downloading, extracting, and processing log files
-4. Extracting CSS and JS file paths
+4. Extracting CSS and JS file paths using Python native methods
 5. Generating final sorted and deduplicated output files
 """
 
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime, timedelta
@@ -128,167 +129,69 @@ def decompress_file(gz_filename):
         return None
 
 
-def extract_css_paths(log_file, domain):
-    r"""
-    Extract CSS file paths from log file.
-    Equivalent bash command:
-    egrep "app\.|chunk-" <file> | awk -F '"${domain}"' '{print $2}' | egrep "\.js|\.css" | awk -F '"' '{print $2}' | sort | uniq | egrep 'lottery|chunk' | grep '\.css$'
+def process_log_content(log_file, domain):
     """
+    Process log file content using Python native methods.
+    Returns tuple of (js_paths_set, css_paths_set)
+    
+    Steps:
+    1. Read file line by line
+    2. Use regex to match lines containing "app." or "chunk-"
+    3. Extract path after domain (quote-delimited)
+    4. Filter paths ending with .js or .css
+    5. Filter paths containing "lottery" or "chunk"
+    6. Collect JS and CSS paths separately
+    """
+    js_paths = set()
+    css_paths = set()
+    
+    pattern_app_chunk = re.compile(r'app\.|chunk-')
+    pattern_js_css = re.compile(r'\.(js|css)$')
+    pattern_lottery_chunk = re.compile(r'lottery|chunk')
+    
     try:
-        p1 = subprocess.Popen(
-            ["egrep", "app\\.|chunk-", log_file],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
-        )
+        with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
+            for line in f:
+                if not pattern_app_chunk.search(line):
+                    continue
+                
+                domain_parts = line.split(f'"{domain}"')
+                if len(domain_parts) < 2:
+                    continue
+                
+                after_domain = domain_parts[1]
+                
+                quote_parts = after_domain.split('"')
+                if len(quote_parts) < 2:
+                    continue
+                
+                path = quote_parts[1]
+                
+                if not pattern_js_css.search(path):
+                    continue
+                
+                if not pattern_lottery_chunk.search(path):
+                    continue
+                
+                if path.endswith('.css'):
+                    css_paths.add(path)
+                elif path.endswith('.js'):
+                    js_paths.add(path)
         
-        p2 = subprocess.Popen(
-            ["awk", "-F", f'"{domain}"', "{print $2}"],
-            stdin=p1.stdout,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
-        )
-        p1.stdout.close()
-        
-        p3 = subprocess.Popen(
-            ["egrep", "\\.js|\\.css"],
-            stdin=p2.stdout,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
-        )
-        p2.stdout.close()
-        
-        p4 = subprocess.Popen(
-            ["awk", "-F", '"', "{print $2}"],
-            stdin=p3.stdout,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
-        )
-        p3.stdout.close()
-        
-        p5 = subprocess.Popen(
-            ["sort"],
-            stdin=p4.stdout,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
-        )
-        p4.stdout.close()
-        
-        p6 = subprocess.Popen(
-            ["uniq"],
-            stdin=p5.stdout,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
-        )
-        p5.stdout.close()
-        
-        p7 = subprocess.Popen(
-            ["egrep", "lottery|chunk"],
-            stdin=p6.stdout,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
-        )
-        p6.stdout.close()
-        
-        p8 = subprocess.Popen(
-            ["grep", "\\.css$"],
-            stdin=p7.stdout,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
-        )
-        p7.stdout.close()
-        
-        output, _ = p8.communicate()
-        return output.decode("utf-8").strip().split("\n") if output else []
+        return js_paths, css_paths
     
     except Exception as e:
-        print(f"Error extracting CSS paths: {e}", file=sys.stderr)
-        return []
+        print(f"Error processing log file {log_file}: {e}", file=sys.stderr)
+        return set(), set()
 
 
-def extract_js_paths(log_file, domain):
-    r"""
-    Extract JS file paths from log file.
-    Equivalent bash command:
-    egrep "app\.|chunk-" <file> | awk -F '"${domain}"' '{print $2}' | egrep "\.js|\.css" | awk -F '"' '{print $2}' | sort | uniq | egrep 'lottery|chunk' | grep '\.js$'
-    """
-    try:
-        p1 = subprocess.Popen(
-            ["egrep", "app\\.|chunk-", log_file],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
-        )
-        
-        p2 = subprocess.Popen(
-            ["awk", "-F", f'"{domain}"', "{print $2}"],
-            stdin=p1.stdout,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
-        )
-        p1.stdout.close()
-        
-        p3 = subprocess.Popen(
-            ["egrep", "\\.js|\\.css"],
-            stdin=p2.stdout,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
-        )
-        p2.stdout.close()
-        
-        p4 = subprocess.Popen(
-            ["awk", "-F", '"', "{print $2}"],
-            stdin=p3.stdout,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
-        )
-        p3.stdout.close()
-        
-        p5 = subprocess.Popen(
-            ["sort"],
-            stdin=p4.stdout,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
-        )
-        p4.stdout.close()
-        
-        p6 = subprocess.Popen(
-            ["uniq"],
-            stdin=p5.stdout,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
-        )
-        p5.stdout.close()
-        
-        p7 = subprocess.Popen(
-            ["egrep", "lottery|chunk"],
-            stdin=p6.stdout,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
-        )
-        p6.stdout.close()
-        
-        p8 = subprocess.Popen(
-            ["grep", "\\.js$"],
-            stdin=p7.stdout,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
-        )
-        p7.stdout.close()
-        
-        output, _ = p8.communicate()
-        return output.decode("utf-8").strip().split("\n") if output else []
-    
-    except Exception as e:
-        print(f"Error extracting JS paths: {e}", file=sys.stderr)
-        return []
-
-
-def process_log_file(link, domain, css_output_file, js_output_file):
+def process_log_file(link, domain, all_js_paths, all_css_paths):
     """
     Process a single log file:
     1. Download
     2. Decompress
-    3. Extract CSS and JS paths
-    4. Append to output files
+    3. Extract CSS and JS paths using Python native methods
+    4. Add to collections
     5. Clean up
     """
     filename = link.split("/")[-1]
@@ -303,19 +206,12 @@ def process_log_file(link, domain, css_output_file, js_output_file):
         print(f"Failed to decompress {filename}", file=sys.stderr)
         return False
     
-    css_paths = extract_css_paths(decompressed_file, domain)
-    if css_paths and css_paths[0]:
-        with open(css_output_file, "a") as f:
-            for path in css_paths:
-                if path:
-                    f.write(path + "\n")
+    js_paths, css_paths = process_log_content(decompressed_file, domain)
     
-    js_paths = extract_js_paths(decompressed_file, domain)
-    if js_paths and js_paths[0]:
-        with open(js_output_file, "a") as f:
-            for path in js_paths:
-                if path:
-                    f.write(path + "\n")
+    all_js_paths.update(js_paths)
+    all_css_paths.update(css_paths)
+    
+    print(f"  Found {len(js_paths)} JS paths and {len(css_paths)} CSS paths")
     
     try:
         os.remove(decompressed_file)
@@ -325,46 +221,28 @@ def process_log_file(link, domain, css_output_file, js_output_file):
     return True
 
 
-def finalize_output_files(temp_css_file, temp_js_file, date_str):
+def save_output_files(all_js_paths, all_css_paths, date_str):
     """
-    Sort, deduplicate, and rename output files.
+    Sort, deduplicate, and save output files.
     """
     final_css_file = f"cssall-{date_str}"
     final_js_file = f"jsall-{date_str}"
     
-    if os.path.exists(temp_css_file):
-        try:
-            with open(temp_css_file, "r") as f:
-                lines = f.readlines()
-            
-            unique_lines = sorted(set(line.strip() for line in lines if line.strip()))
-            
-            with open(final_css_file, "w") as f:
-                for line in unique_lines:
-                    f.write(line + "\n")
-            
-            os.remove(temp_css_file)
-            print(f"Created {final_css_file} with {len(unique_lines)} unique CSS paths")
-        except Exception as e:
-            print(f"Error processing CSS file: {e}", file=sys.stderr)
+    if all_css_paths:
+        sorted_css = sorted(all_css_paths)
+        with open(final_css_file, "w") as f:
+            for path in sorted_css:
+                f.write(path + "\n")
+        print(f"Created {final_css_file} with {len(sorted_css)} unique CSS paths")
     else:
         print("No CSS paths found")
     
-    if os.path.exists(temp_js_file):
-        try:
-            with open(temp_js_file, "r") as f:
-                lines = f.readlines()
-            
-            unique_lines = sorted(set(line.strip() for line in lines if line.strip()))
-            
-            with open(final_js_file, "w") as f:
-                for line in unique_lines:
-                    f.write(line + "\n")
-            
-            os.remove(temp_js_file)
-            print(f"Created {final_js_file} with {len(unique_lines)} unique JS paths")
-        except Exception as e:
-            print(f"Error processing JS file: {e}", file=sys.stderr)
+    if all_js_paths:
+        sorted_js = sorted(all_js_paths)
+        with open(final_js_file, "w") as f:
+            for path in sorted_js:
+                f.write(path + "\n")
+        print(f"Created {final_js_file} with {len(sorted_js)} unique JS paths")
     else:
         print("No JS paths found")
 
@@ -396,17 +274,13 @@ def main():
         print("No log files found")
         return
     
-    temp_css_file = "cssall"
-    temp_js_file = "jsall"
-    
-    for temp_file in [temp_css_file, temp_js_file]:
-        if os.path.exists(temp_file):
-            os.remove(temp_file)
+    all_js_paths = set()
+    all_css_paths = set()
     
     for link in links:
-        process_log_file(link, args.domain, temp_css_file, temp_js_file)
+        process_log_file(link, args.domain, all_js_paths, all_css_paths)
     
-    finalize_output_files(temp_css_file, temp_js_file, date_str)
+    save_output_files(all_js_paths, all_css_paths, date_str)
     
     print("Processing complete!")
 
