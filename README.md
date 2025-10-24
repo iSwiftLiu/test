@@ -52,7 +52,8 @@ Where `YYYYMMDD` is the date from 2 days ago.
 2. **Fetch Log Links**: Uses hcloud CLI to retrieve CDN log URLs
 
 3. **Process Each Log File**:
-   - Download the .gz file
+   - Extract filename from URL using `urllib.parse.urlparse` (removes query parameters)
+   - Download the .gz file using wget or curl
    - Decompress it (automatically removes .gz)
    - Process using Python native methods:
      - Read file line by line
