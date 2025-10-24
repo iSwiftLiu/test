@@ -17,6 +17,7 @@ import re
 import subprocess
 import sys
 from datetime import datetime, timedelta
+from urllib.parse import urlparse
 
 
 def get_time_range():
@@ -194,7 +195,8 @@ def process_log_file(link, domain, all_js_paths, all_css_paths):
     4. Add to collections
     5. Clean up
     """
-    filename = link.split("/")[-1]
+    parsed_url = urlparse(link)
+    filename = os.path.basename(parsed_url.path)
     
     print(f"Processing {filename}...")
     
