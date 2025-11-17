@@ -1,0 +1,93 @@
+version: '3.8'
+
+#######################################
+# SFTPGo with DARE Encryption
+# Docker Compose Configuration
+#######################################
+
+services:
+  sftpgo:
+    # Using official SFTPGo Docker image
+    image: drakkan/sftpgo:latest
+    
+    # Container name for easy reference
+    container_name: sftpgo-dare
+    
+    # Port mappings
+    ports:
+      # SFTP Server Port
+      - "2022:2022"
+      # REST API Port
+      - "8080:8080"
+      # Web Admin Port (HTTPS)
+      - "8443:8443"
+    
+    # Volume mounts
+    volumes:
+      # Configuration file
+      - ./sftpgo-dare.json:/etc/sftpgo/sftpgo.json:ro
+      
+      # Data directory
+      - sftpgo_data:/var/lib/sftpgo/data
+      
+      # Encryption keys
+      - ./keys:/var/lib/sftpgo/keys
+      
+      # Database
+      - sftpgo_db:/var/lib/sftpgo
+      
+      # Logs
+      - ./logs:/var/log/sftpgo
+    
+    # Environment variables
+    environment:
+      # Log level: info, debug, warn, error
+      - SFTPGO_LOG_LEVEL=info
+      
+      # Configuration file path
+      - SFTPGO_CONFIG_FILE=/etc/sftpgo/sftpgo.json
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Network
+    networks:
+      - sftpgo-network
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v2/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Additional configurations
+    hostname: sftpgo
+    user: 'root'
+    tty: true
+
+# Named volumes
+volumes:
+  sftpgo_data:
+    driver: local
+  sftpgo_db:
+    driver: local
+
+# Networks
+networks:
+  sftpgo-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

@@ -47,3 +47,32 @@ jsall-*
 # OS
 .DS_Store
 Thumbs.db
+
+# SFTPGo related files
+sftpgo.db
+sftpgo.db-journal
+sftpgo.pid
+sftpgo.log
+sftpgo.log.*
+keys/
+logs/
+
+# Database backups
+*.db.bak
+*.db.backup
+sftpgo-backup-*
+
+# Runtime directories
+.runtime/
+
+# Docker volumes (local references)
+sftpgo_data/
+sftpgo_db/
+
+# Temporary test files
+/tmp/
+test-file-*
+
+# Environment overrides
+.env.local
+.env.*.local
