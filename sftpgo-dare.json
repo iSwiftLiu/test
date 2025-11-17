@@ -1,0 +1,167 @@
+{
+  "sftpd": {
+    "bindings": [
+      {
+        "port": 2022,
+        "address": "0.0.0.0",
+        "apply_proxy_config": true,
+        "tls_mode": 0,
+        "certificate_file": "",
+        "certificate_key_file": "",
+        "proxy_allowed": []
+      }
+    ],
+    "max_auth_tries": 0,
+    "banner": "SFTPGo with DARE (Data At Rest Encryption)",
+    "active_transfers_interrupt_disabled": false,
+    "defender": {
+      "enabled": false,
+      "driver": "memory",
+      "ban_time": 30,
+      "ban_threshold": 20,
+      "observation_time": 30,
+      "score_invalid": 3,
+      "score_valid": 1,
+      "score_limit_exceeded": 15
+    }
+  },
+  "ftpd": {
+    "bindings": [],
+    "passive_port_range": {
+      "start": 50000,
+      "end": 60000
+    },
+    "passive_ip_overrides": []
+  },
+  "webdavd": {
+    "bindings": []
+  },
+  "data_provider": {
+    "driver": "sqlite",
+    "name": "sftpgo.db",
+    "host": "",
+    "port": 5432,
+    "username": "",
+    "password": "",
+    "connection_string": "",
+    "sql_tables_prefix": "",
+    "track_quota": 1,
+    "delayed_quota_update": 0,
+    "pool_size": 0
+  },
+  "storage": {
+    "fs": {
+      "osfs_type": 0
+    }
+  },
+  "kms": {
+    "secrets": {
+      "url": "local",
+      "master_key": "sftpgo-secret-key-please-change-this-value",
+      "master_key_path": ""
+    },
+    "encryption": {
+      "url": "local",
+      "master_key": "sftpgo-encryption-key-please-change-this",
+      "master_key_path": ""
+    }
+  },
+  "common": {
+    "idle_timeout": 15,
+    "upload_mode": 0,
+    "actions": {
+      "execute_on": [],
+      "execute_timeout": 20,
+      "hook_http_method": "POST",
+      "hook_http_auth_user": "",
+      "hook_http_auth_pass": ""
+    },
+    "rate_limiters": [],
+    "rate_limit_exceeded_status": 429,
+    "pool_listeners": 5
+  },
+  "users": [
+    {
+      "username": "admin",
+      "password": "password123!",
+      "public_keys": [],
+      "home_dir": "/srv/sftpgo/data",
+      "uid": 0,
+      "gid": 0,
+      "max_sessions": 0,
+      "quota_size": 0,
+      "quota_files": 0,
+      "permissions": {
+        "/": [
+          "*"
+        ]
+      },
+      "upload_bandwidth": 0,
+      "download_bandwidth": 0,
+      "upload_data_transfer": 0,
+      "download_data_transfer": 0,
+      "total_data_transfer": 0,
+      "expires": 0,
+      "last_login": 0,
+      "status": 1,
+      "filters": {
+        "allowed_ip": [],
+        "denied_ip": [],
+        "denied_login_methods": [],
+        "denied_protocols": []
+      },
+      "filesystem": {
+        "provider": 0,
+        "osconfig": {
+          "read_buffer_size": 0,
+          "write_buffer_size": 0
+        }
+      },
+      "additional_info": "Admin user with DARE encryption enabled",
+      "description": "Admin user"
+    }
+  ],
+  "http": {
+    "bindings": [
+      {
+        "port": 8080,
+        "address": "0.0.0.0",
+        "tls_mode": 0,
+        "certificate_file": "",
+        "certificate_key_file": "",
+        "min_tls_version": 12,
+        "cipher_suites": []
+      }
+    ],
+    "cors": {
+      "enabled": false,
+      "allowed_origins": [],
+      "allowed_methods": [],
+      "allowed_headers": [],
+      "expose_headers": [],
+      "allow_credentials": false,
+      "max_age": 0
+    },
+    "certificate_file": "",
+    "certificate_key_file": ""
+  },
+  "command": {
+    "timeout": 30,
+    "env": []
+  },
+  "plugins": [],
+  "log_file_path": "sftpgo.log",
+  "log_max_size": 100,
+  "log_max_backups": 3,
+  "log_max_age": 28,
+  "log_compress": true,
+  "log_level": "info",
+  "log_utc_time": false,
+  "log_calls": false,
+  "enable_rest_api": true,
+  "enable_web_admin": true,
+  "web_admin_read_timeout": 300,
+  "web_admin_write_timeout": 300,
+  "web_admin_address": "127.0.0.1",
+  "web_admin_port": 8443
+}
